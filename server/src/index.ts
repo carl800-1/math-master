@@ -126,11 +126,16 @@ app.use('/api/import', importRouter);
 app.use('/api', practiceRouter);
 
 // SPA 兜底：必须放在所有 /api 路由之后，否则会拦截 GET /api/* 请求
-// 生产：Docker 把 web/dist 复制到 /server/public；开发：直接用 web/dist
-const pubDir = join(__dirname, 'public');
-const webDist = join(__dirname, '..', '..', 'web', 'dist');
-const staticDir = existsSync(pubDir) ? pubDir : webDist;
-if (existsSync(staticDir)) {
+// 生产/Docker：前端在 /server/public（编译后 __dirname=/server/dist，故取上一级）
+// 开发态(tsx)：回退到 web/dist
+const staticCandidates = [
+  join(__dirname, '..', 'public'),                  // 生产编译态 / Docker：/server/public
+  join(__dirname, 'public'),
+  join(process.cwd(), 'public'),
+  join(__dirname, '..', '..', 'web', 'dist'),       // 开发态 tsx
+];
+const staticDir = staticCandidates.find((p) => existsSync(p));
+if (staticDir) {
   app.use(express.static(staticDir));
   app.get('*', (_req, res) => res.sendFile(join(staticDir, 'index.html')));
 }

@@ -1,8 +1,9 @@
 # 生产部署（绿联 NAS / 任意装了 Docker 的机器）
-# 镜像由 GitHub Actions 自动构建并推送到 GHCR，watchtower 负责自动拉取更新。
+# 镜像由 GitHub Actions 自动构建并推送到 GHCR；国内环境经 ghcr.nju.edu.cn 镜像源拉取，
+# watchtower 同样从该镜像源检查并自动更新。
 services:
   cuoti:
-    image: ghcr.io/carl800-1/cuoti:latest
+    image: ghcr.nju.edu.cn/carl800-1/cuoti:latest
     container_name: cuoti
     ports:
       - "3000:3000"
