@@ -97,6 +97,23 @@ router.post('/recommend', (req, res) => {
     const r = ins.run(childId, based ? based.id : null, x.c.id, reason);
     out.push({ id: r.lastInsertRowid, question: x.c, reason, status: 'pending' });
   }
+  // 没有新生成的推荐时（候选都已推荐过），回退返回已有的「待练习」推荐，
+  // 保证前端重复点击「生成推荐」不会看到空白列表（接口幂等）。
+  if (out.length === 0) {
+    const exist = db.prepare(
+      `SELECT r.id AS rid, r.reason, r.status, q.id AS qid, q.content, q.type, q.knowledge_points, q.difficulty
+       FROM recommendations r JOIN questions q ON r.recommended_qid = q.id
+       WHERE r.child_id = ? AND r.status = 'pending' ORDER BY r.id DESC`,
+    ).all(childId) as any[];
+    for (const r of exist) {
+      out.push({
+        id: r.rid,
+        question: { id: r.qid, content: r.content, type: r.type, knowledge_points: r.knowledge_points, difficulty: r.difficulty },
+        reason: r.reason,
+        status: r.status,
+      });
+    }
+  }
   const weakKps = [...kps.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
   res.json({ weak_kps: weakKps, recommendations: out });
 });
