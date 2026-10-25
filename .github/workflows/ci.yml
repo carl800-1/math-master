@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+# 允许 GITHUB_TOKEN 向 GHCR 推送镜像
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # 每次推送/PR：构建镜像并冒烟自测（不推送）
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: cuoti:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        run: |
+          docker run -d --name cuoti -p 3000:3000 cuoti:test
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null; then
+              echo "server up after ${i} tries"; break
+            fi
+            sleep 2
+          done
+          echo "--- health ---"; curl -fsS http://localhost:3000/api/health
+          echo; echo "--- llm status ---"; curl -fsS http://localhost:3000/api/llm/status
+          echo; echo "--- analyze (mock) ---"
+          curl -fsS -X POST http://localhost:3000/api/solve/analyze \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"计算 1/2 + 1/3","child_id":1}' | head -c 200
+          echo
+          docker rm -f cuoti
+
+  # 仅 push 到 main 或打 tag：构建并推送到 GHCR
+  publish:
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/carl800-1/cuoti
+          tags: |
+            type=ref,event=tag
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

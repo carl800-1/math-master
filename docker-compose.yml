@@ -1,0 +1,26 @@
+# 生产部署（绿联 NAS / 任意装了 Docker 的机器）
+# 镜像由 GitHub Actions 自动构建并推送到 GHCR，watchtower 负责自动拉取更新。
+services:
+  cuoti:
+    image: ghcr.io/carl800-1/cuoti:latest
+    container_name: cuoti
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/server/data          # SQLite 数据库与上传文件持久化
+    restart: unless-stopped
+
+  # 自动部署：每 5 分钟检查一次 GHCR 是否有新镜像，有则拉取并重建 cuoti
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup --label-enable
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    restart: unless-stopped
+
+# 本地首次构建（不走 GHCR）时改用下面这段，注释掉上面的 image 行：
+#   build: .
+#   image: cuoti:latest

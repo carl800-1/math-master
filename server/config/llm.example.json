@@ -1,0 +1,12 @@
+{
+  "text": {
+    "baseURL": "https://api.deepseek.com/v1",
+    "apiKey": "请替换为你的 DeepSeek API Key（或留空用演示模式）",
+    "model": "deepseek-chat"
+  },
+  "vision": {
+    "baseURL": "https://open.bigmodel.cn/api/paas/v4",
+    "apiKey": "请替换为支持视觉的模型 Key（智谱 GLM-4V / 通义 Qwen-VL / OpenAI gpt-4o 等；或留空）",
+    "model": "glm-4v"
+  }
+}

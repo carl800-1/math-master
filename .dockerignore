@@ -1,0 +1,8 @@
+node_modules
+data
+.git
+**/dist
+**/*.log
+config/llm.json
+.env
+.DS_Store
