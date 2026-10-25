@@ -53,6 +53,21 @@ class OpenAICompatibleProvider implements LLMProvider {
   }
 }
 
+/** 演示模式下的启发式考点推断（仅用于无 key 演示；真实部署由 LLM 打标） */
+function inferKps(text: string): string[] {
+  const t = text || '';
+  const kps: string[] = [];
+  if (/方程/.test(t)) kps.push('一元一次方程', '方程求解');
+  if (/(分数|\/|通分|分母|约分)/.test(t)) kps.push('分数运算', '通分');
+  if (/(计算|加减|乘除|四则)/.test(t)) kps.push('四则运算');
+  if (/(面积|周长|长方形|正方形|圆|图形|三角形)/.test(t)) kps.push('图形与几何');
+  if (/(百分数|百分比|%|折扣)/.test(t)) kps.push('百分数应用');
+  if (/(比例|比)/.test(t)) kps.push('比和比例');
+  if (/(行程|工程|鸡兔|相遇|追及)/.test(t)) kps.push('应用题');
+  if (kps.length === 0) kps.push('基础运算');
+  return [...new Set(kps)];
+}
+
 /** 未配置 key 时使用的演示 Provider，保证全流程可跑通、可验收 */
 class MockProvider implements LLMProvider {
   readonly id = 'mock';
@@ -72,7 +87,7 @@ class MockProvider implements LLMProvider {
       const qs = (lines.length ? lines : [text.slice(0, 60)]).map((line, i) => ({
         content: line,
         type: i % 2 === 0 ? '选择题' : '填空题',
-        knowledge_points: ['待标注'],
+        knowledge_points: inferKps(line),
         difficulty: 2,
         answer: '（待补充）',
         explanation: '（导入示例，建议在题库中补充标准答案与解析）',
@@ -82,12 +97,14 @@ class MockProvider implements LLMProvider {
 
     if (opts.json) {
       // 命中考点分析场景
-      return JSON.stringify({
-        knowledge_points: ['分数加减法', '通分', '异分母运算'],
-        exam_focus: '考查异分母分数加法的通分能力与运算准确性，属于小学分数运算核心考点。',
-        first_question:
-          '这道题里两个分数分母不一样，要先把它们变成「分母相同」才能相加。你能想到用什么办法让它们的分母变得一样吗？',
-      });
+      const kps = inferKps(text);
+      const focus = `考查${kps.slice(0, 2).join('、')}等考点，建议先引导孩子理解题意、梳理已知条件再动手。`;
+      const firstQ = /方程/.test(text)
+        ? '这是一道方程题，目标就是把 x 单独留在一边。你先想想：第一步可以先把哪个数移到等号另一边？'
+        : /(分数|\/|通分|分母)/.test(text)
+        ? '这两个分数的分母不同，要先让它们「单位」一致才能运算。你能想到用什么办法吗？'
+        : '先别急着算，我们一起把题目里的已知信息和要求理一理。你能说说这道题想让我们求什么吗？';
+      return JSON.stringify({ knowledge_points: kps, exam_focus: focus, first_question: firstQ });
     }
 
     // 苏格拉底续问：根据孩子最新回复给一个推进式追问 / 提示

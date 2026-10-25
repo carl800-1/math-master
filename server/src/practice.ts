@@ -142,7 +142,7 @@ router.post('/exams/generate', (req, res) => {
   const info = db.prepare(
     'INSERT INTO exams (child_id, title, question_ids, question_snapshot, status) VALUES (?,?,?,?,?)',
   ).run(childId, title, JSON.stringify(ids), JSON.stringify(snap), 'generated');
-  res.json({ exam_id: info.lastInsertRowid, title, count: ids.length });
+  res.json({ exam_id: info.lastInsertRowid, title, count: ids.length, question_ids: ids });
 });
 
 /** GET /api/exams?child_id=1 */
@@ -185,6 +185,16 @@ router.post('/exams/:id/submit', subUpload.single('file'), async (req, res) => {
     const a = req.body.answers;
     if (a) { try { answers = typeof a === 'string' ? JSON.parse(a) : a; } catch { /* ignore */ } }
     const photoFile = req.file?.filename || null;
+
+    // 输入校验：避免无有效输入时触发 500（真实场景：拍照但未配视觉模型）
+    if (photoFile && !hasVisionModel() && Object.keys(answers).length === 0) {
+      return res.status(400).json({
+        error: '已收到照片，但未配置视觉模型。请在「设置」中填入支持图片的模型 key，或改用「逐题填写答案」。',
+      });
+    }
+    if (!photoFile && Object.keys(answers).length === 0) {
+      return res.status(400).json({ error: '请提供答卷照片，或使用「逐题填写答案」。' });
+    }
 
     const { results, score, analysis } = await grade(snapshot, photoFile, answers);
 
