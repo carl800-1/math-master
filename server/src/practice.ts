@@ -1,14 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { mkdirSync, readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import db from './db.js';
+import { join } from 'path';
+import db, { dataRoot } from './db.js';
 import { getTextProvider, getVisionProvider, ChatMessage } from './llm.js';
 import { hasVisionModel, hasTextModel } from './config.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const uploadDir = join(__dirname, '..', '..', 'data', 'uploads');
+const uploadDir = join(dataRoot(), 'uploads');
 mkdirSync(uploadDir, { recursive: true });
 
 const subUpload = multer({ storage: multer.diskStorage({
@@ -52,11 +50,10 @@ router.post('/recommend', (req, res) => {
   const candidates = db.prepare(
     `SELECT id, book_id, content, knowledge_points, type, difficulty
      FROM questions
-     WHERE id NOT IN (SELECT question_id FROM wrong_questions WHERE child_id = ?)
-       AND book_id IS NOT NULL`,
+     WHERE id NOT IN (SELECT question_id FROM wrong_questions WHERE child_id = ?)`,
   ).all(childId) as any[];
 
-  const scored = candidates.map(c => {
+  let scored = candidates.map(c => {
     const ckps = safeJson<string[]>(c.knowledge_points);
     let overlap = 0;
     for (const k of ckps) if (kps.has(k)) overlap++;
@@ -65,8 +62,18 @@ router.post('/recommend', (req, res) => {
     const score = overlap * 10 + (crossBook ? 5 : 0) + (c.difficulty || 1) * 0.1;
     return { c, overlap, score };
   }).filter(x => x.overlap > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    .sort((a, b) => b.score - a.score);
+
+  // 兜底：若错题已覆盖所有「同考点」候选（无重叠），则推荐其他教材的未做题作为拓展练习，
+  // 保证只要有未做过的题，推荐功能就不会返回空（避免体验死胡同）。
+  if (scored.length === 0) {
+    scored = candidates.map(c => {
+      let crossBook = false;
+      for (const r of rows) { if (r.book_id && r.book_id !== c.book_id) { crossBook = true; break; } }
+      return { c, overlap: 0, score: (crossBook ? 5 : 1) + (c.difficulty || 1) * 0.1 };
+    }).sort((a, b) => b.score - a.score);
+  }
+  scored = scored.slice(0, limit);
 
   const out: any[] = [];
   const ins = db.prepare(
@@ -84,7 +91,9 @@ router.post('/recommend', (req, res) => {
       return ck.some(k => rk.includes(k));
     });
     const reasonKps = safeJson<string[]>(x.c.knowledge_points).slice(0, 2).join('、');
-    const reason = `针对你常错的考点：${reasonKps}`;
+    const reason = x.overlap > 0
+      ? `针对你常错的考点：${reasonKps}`
+      : `拓展练习（其他教材），巩固基础`;
     const r = ins.run(childId, based ? based.id : null, x.c.id, reason);
     out.push({ id: r.lastInsertRowid, question: x.c, reason, status: 'pending' });
   }

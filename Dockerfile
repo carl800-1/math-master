@@ -20,6 +20,7 @@ RUN npm run build && npm prune --omit=dev
 # ---- 3. 运行时（仅生产依赖 + 编译产物）----
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
+ENV DATA_DIR=/server/data
 WORKDIR /server
 COPY server/package*.json ./
 COPY --from=build /server/node_modules ./node_modules

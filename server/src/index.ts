@@ -4,14 +4,14 @@ import multer from 'multer';
 import { existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import db from './db.js';
+import db, { dataRoot } from './db.js';
 import solveRouter from './solve.js';
 import importRouter from './import.js';
 import practiceRouter from './practice.js';
 import { llmStatus } from './llm.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, '..', '..', 'data');
+const dataDir = dataRoot();
 const uploadDir = join(dataDir, 'uploads');
 mkdirSync(uploadDir, { recursive: true });
 

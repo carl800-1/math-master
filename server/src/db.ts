@@ -4,7 +4,14 @@ import { dirname, join } from 'path';
 import { mkdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, '..', '..', 'data');
+// 数据根目录：
+//  - 生产/Docker：编译产物在 /server/dist，故取上一级 /server/data（即 docker-compose 挂载的持久卷）
+//  - 开发态：server/src → server/data
+// 可用环境变量 DATA_DIR 强制覆盖（Dockerfile 已设为 /server/data），避免相对路径误解析到容器可写层。
+export function dataRoot(): string {
+  return process.env.DATA_DIR || join(__dirname, '..', 'data');
+}
+const dataDir = dataRoot();
 mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(join(dataDir, 'cuoti.db'));

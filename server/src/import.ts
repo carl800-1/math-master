@@ -1,13 +1,11 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { mkdirSync, readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join, extname } from 'path';
-import db from './db.js';
+import { join, extname } from 'path';
+import db, { dataRoot } from './db.js';
 import { getTextProvider, ChatMessage } from './llm.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const booksDir = join(__dirname, '..', '..', 'data', 'books');
+const booksDir = join(dataRoot(), 'books');
 mkdirSync(booksDir, { recursive: true });
 
 const storage = multer.diskStorage({
