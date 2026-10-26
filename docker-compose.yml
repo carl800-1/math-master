@@ -10,6 +10,8 @@ services:
     volumes:
       - ./data:/server/data          # SQLite 数据库与上传文件持久化
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
 
   # 自动部署：每 5 分钟检查一次 GHCR 是否有新镜像，有则拉取并重建 math-master
   watchtower:
