@@ -141,4 +141,4 @@ if (staticDir) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`cuoti server listening on :${PORT}`));
+app.listen(PORT, () => console.log(`math-master server listening on :${PORT}`));

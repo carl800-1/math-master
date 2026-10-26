@@ -2,16 +2,16 @@
 # 镜像由 GitHub Actions 自动构建并推送到 GHCR；国内环境经 ghcr.nju.edu.cn 镜像源拉取，
 # watchtower 同样从该镜像源检查并自动更新。
 services:
-  cuoti:
-    image: ghcr.nju.edu.cn/carl800-1/cuoti:latest
-    container_name: cuoti
+  math-master:
+    image: ghcr.nju.edu.cn/carl800-1/math-master:latest
+    container_name: math-master
     ports:
       - "3000:3000"
     volumes:
       - ./data:/server/data          # SQLite 数据库与上传文件持久化
     restart: unless-stopped
 
-  # 自动部署：每 5 分钟检查一次 GHCR 是否有新镜像，有则拉取并重建 cuoti
+  # 自动部署：每 5 分钟检查一次 GHCR 是否有新镜像，有则拉取并重建 math-master
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -24,4 +24,4 @@ services:
 
 # 本地首次构建（不走 GHCR）时改用下面这段，注释掉上面的 image 行：
 #   build: .
-#   image: cuoti:latest
+#   image: math-master:latest

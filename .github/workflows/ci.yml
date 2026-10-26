@@ -27,13 +27,13 @@ jobs:
         with:
           context: .
           load: true
-          tags: cuoti:test
+          tags: math-master:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Smoke test
         run: |
-          docker run -d --name cuoti -p 3000:3000 cuoti:test
+          docker run -d --name math-master -p 3000:3000 math-master:test
           for i in $(seq 1 20); do
             if curl -fsS http://localhost:3000/api/health >/dev/null; then
               echo "server up after ${i} tries"; break
@@ -47,7 +47,7 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"text":"计算 1/2 + 1/3","child_id":1}' | head -c 200
           echo
-          docker rm -f cuoti
+          docker rm -f math-master
 
   # 仅 push 到 main 或打 tag：构建并推送到 GHCR
   publish:
@@ -74,7 +74,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/carl800-1/cuoti
+          images: ghcr.io/carl800-1/math-master
           tags: |
             type=ref,event=tag
             type=sha

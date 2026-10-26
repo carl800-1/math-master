@@ -1,4 +1,4 @@
-# 数学大师（cuoti）
+# 数学大师（math-master）
 
 面向孩子的数学错题收集与针对性练习软件。三大核心能力：
 
@@ -12,14 +12,14 @@
 
 - 前端：React + TypeScript + Vite + Tailwind（响应式，平板/手机/PC 通吃，支持摄像头拍照与浏览器打印）
 - 后端：Node.js + Express + TypeScript（单容器同时托管前端与 API）
-- 存储：SQLite 单文件（`data/cuoti.db`），上传文件存 `data/uploads`
+- 存储：SQLite 单文件（`data/mathmaster.db`），上传文件存 `data/uploads`
 - AI：开放式 LLM 接入层（`OpenAICompatibleProvider`），兼容 DeepSeek / OpenAI / 通义 / 智谱；未配置 key 时自动回落 **Mock 演示模式**（全流程可跑）
 - 部署：Docker（GitHub Actions 自动构建推 GHCR，watchtower 自动拉取更新）
 
 ## 目录结构
 
 ```
-cuoti/
+math-master/
 ├── server/            # Express 后端 + SQLite + LLM 接入层
 │   ├── src/
 │   │   ├── db.ts          # 建表（children/books/questions/wrong_questions/study_records/recommendations/exams/exam_submissions）
@@ -61,7 +61,7 @@ cp server/config/llm.example.json server/config/llm.json
 
 ## 部署到绿联 NAS / 任意 Docker 主机
 
-镜像由 CI 自动构建并推送到 `ghcr.io/carl800-1/cuoti:latest`。
+镜像由 CI 自动构建并推送到 `ghcr.io/carl800-1/math-master:latest`。
 
 ```bash
 # 1) 首次：登录 GHCR（用有 read:packages 权限的 GitHub Personal Access Token）
@@ -73,7 +73,7 @@ docker compose up -d
 # 3) 访问 http://<主机IP>:3000
 ```
 
-设置 AI key：在 NAS 上 `cuoti` 容器里放 `config/llm.json`，或挂载一个目录覆盖
+设置 AI key：在 NAS 上 `math-master` 容器里放 `config/llm.json`，或挂载一个目录覆盖
 `/server/config/llm.json`（compose 已预留 `./data` 卷；可按需再挂一个 config 卷）。
 
 ## CI / 自动生成

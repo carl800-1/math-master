@@ -14,7 +14,7 @@ export function dataRoot(): string {
 const dataDir = dataRoot();
 mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(join(dataDir, 'cuoti.db'));
+const db = new Database(join(dataDir, 'mathmaster.db'));
 db.pragma('journal_mode = WAL');
 
 db.exec(`
