@@ -41,7 +41,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="bg-white shadow px-4 py-3 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold">错题大师</h1>
+          <h1 className="text-lg font-bold">数学大师 <span className="text-xs font-normal text-slate-400 align-middle">v1.1.0</span></h1>
           <div className="text-xs text-slate-400 text-right leading-tight">
             <div>后端：{health}</div>
             <div>AI：{llm.text || '…'} / 视觉：{llm.vision || '…'}</div>

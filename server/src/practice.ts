@@ -396,7 +396,7 @@ function renderPrintHtml(title: string, childName: string, questions: any[]): st
   <h1>${escapeHtml(title)}</h1>
   <div class="meta">姓名：__________　${escapeHtml(childName)}　日期：__________</div>
   ${items}
-  <div class="tip">本卷由「错题大师」生成 · 做完后拍照上传即可自动批改</div>
+  <div class="tip">本卷由「数学大师」生成 · 做完后拍照上传即可自动批改</div>
 </body></html>`;
 }
 function escapeHtml(s: string): string {
