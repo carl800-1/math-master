@@ -118,17 +118,33 @@ router.post('/recommend', (req, res) => {
   res.json({ weak_kps: weakKps, recommendations: out });
 });
 
-/** GET /api/recommendations?child_id=1 */
+/** GET /api/recommendations?child_id=1 —— 返回结构与 POST /recommend 保持一致（嵌套 question），供前端直接渲染 */
 router.get('/recommendations', (req, res) => {
   const childId = Number(req.query.child_id) || 1;
   const rows = db.prepare(
-    `SELECT r.*, q.content, q.type, q.knowledge_points, q.difficulty, b.title AS book_title
+    `SELECT r.*, q.content, q.type, q.knowledge_points, q.difficulty, q.answer, b.title AS book_title
      FROM recommendations r
      JOIN questions q ON r.recommended_qid = q.id
      LEFT JOIN books b ON q.book_id = b.id
      WHERE r.child_id = ? ORDER BY r.id DESC`,
-  ).all(childId);
-  res.json(rows);
+  ).all(childId) as any[];
+  const out = rows.map(r => ({
+    id: r.id,
+    based_on_wrong_qid: r.based_on_wrong_qid,
+    recommended_qid: r.recommended_qid,
+    reason: r.reason,
+    status: r.status,
+    book_title: r.book_title,
+    question: {
+      id: r.recommended_qid,
+      content: r.content,
+      type: r.type,
+      knowledge_points: r.knowledge_points,
+      difficulty: r.difficulty,
+      answer: r.answer,
+    },
+  }));
+  res.json(out);
 });
 
 /** PATCH /api/recommendations/:id  { status } */

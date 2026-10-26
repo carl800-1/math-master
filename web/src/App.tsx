@@ -447,11 +447,11 @@ function Recommend() {
         {list.map(r => (
           <div key={r.id} className="bg-white rounded-xl shadow p-3 text-sm">
             <div className="flex justify-between gap-2">
-              <span className="font-medium">{r.question.content}</span>
+              <span className="font-medium">{r.question?.content ?? r.content}</span>
               <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-500 shrink-0">{r.status}</span>
             </div>
             <div className="text-slate-400 text-xs mt-1">
-              {r.question.type} · 难度{r.question.difficulty}
+              {r.question?.type ?? r.type} · 难度{r.question?.difficulty ?? r.difficulty}
               {r.book_title ? ` · 《${r.book_title}》` : ''}
             </div>
             <div className="text-blue-600 text-xs mt-1">💡 {r.reason}</div>
